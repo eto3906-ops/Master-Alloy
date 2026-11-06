@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldsmith Bench - Jewelry Alloy & Casting Calculator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            400: '#f6d365',
+                            500: '#d4af37',
+                            600: '#aa820a',
+                            700: '#856404',
+                        },
+                        silver: {
+                            200: '#e5e4e2',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            700: '#374151',
+                        },
+                        bronze: {
+                            500: '#cd7f32'
+                        },
+                        darkbg: '#0f1115',
+                        cardbg: '#181b20',
+                        borderbg: '#2a2e37'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cinzel', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f1115;
+            color: #e5e4e2;
+        }
+        .font-serif-title {
+            font-family: 'Cinzel', serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #181b20;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2e37;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { border: 1px solid #ccc !important; background: white !important; color: black !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-borderbg bg-cardbg/80 backdrop-blur sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gold-500 to-amber-700 flex items-center justify-center text-darkbg shadow-lg shadow-gold-500/20 font-bold text-xl">
+                    <i class="fa-solid font-bold fa-gem"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif-title text-xl font-bold tracking-wider text-gold-400">AUREUS & ARGENT</h1>
+                    <p class="text-xs text-gray-400 uppercase tracking-widest">Master Jewelry Alloy & Casting Bench Studio</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Unit Switcher -->
+                <div class="bg-darkbg p-1 rounded-lg border border-borderbg flex text-xs font-semibold">
+                    <button onclick="setUnit('g')" id="unit-btn-g" class="px-3 py-1.5 rounded-md transition-all text-darkbg bg-gold-500 font-bold">Grams (g)</button>
+                    <button onclick="setUnit('ozt')" id="unit-btn-ozt" class="px-3 py-1.5 rounded-md transition-all text-gray-400 hover:text-white">Troy Oz (ozt)</button>
+                    <button onclick="setUnit('dwt')" id="unit-btn-dwt" class="px-3 py-1.5 rounded-md transition-all text-gray-400 hover:text-white">DWT (dwt)</button>
+                </div>
+
+                <!-- Spot Price Modal Trigger -->
+                <button onclick="toggleModal('spot-price-modal')" class="px-3 py-1.5 rounded-lg border border-gold-500/30 hover:border-gold-500 bg-gold-500/10 text-gold-400 text-xs font-medium flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-coins"></i>
+                    <span>Spot Prices</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT PANEL: Alloy Selection & Controls (5 Cols) -->
+        <section class="lg:col-span-5 space-y-6 no-print">
+
+            <!-- Category & Alloy Selection -->
+            <div class="bg-cardbg border border-borderbg rounded-xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-serif-title text-lg font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-stacked text-gold-500"></i>
+                        1. Select Recipe
+                    </h2>
+                    <button onclick="toggleModal('custom-alloy-modal')" class="text-xs text-gold-400 hover:text-gold-500 flex items-center gap-1">
+                        <i class="fa-solid fa-plus-circle"></i> Custom Recipe
+                    </button>
+                </div>
+
+                <!-- Alloy Category Tabs -->
+                <div class="grid grid-cols-4 gap-1.5 bg-darkbg p-1 rounded-lg mb-4 text-xs font-medium text-center">
+                    <button onclick="setCategory('Silver')" id="cat-Silver" class="cat-tab py-2 rounded-md transition-all bg-gold-500 text-darkbg font-bold">Silver</button>
+                    <button onclick="setCategory('18K Gold')" id="cat-18K Gold" class="cat-tab py-2 rounded-md transition-all text-gray-400 hover:text-white">18K Gold</button>
+                    <button onclick="setCategory('14K Gold')" id="cat-14K Gold" class="cat-tab py-2 rounded-md transition-all text-gray-400 hover:text-white">14K Gold</button>
+                    <button onclick="setCategory('10K Gold')" id="cat-10K Gold" class="cat-tab py-2 rounded-md transition-all text-gray-400 hover:text-white">10K Gold</button>
+                </div>
+
+                <!-- Specific Alloy Selector Dropdown -->
+                <label class="block text-xs text-gray-400 mb-1">Specific Alloy Standard</label>
+                <div class="relative">
+                    <select id="alloy-select" onchange="onAlloySelectChange()" class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500 transition-all appearance-none cursor-pointer">
+                        <!-- Options populated via JS -->
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-3.5 text-xs text-gray-400 pointer-events-none"></i>
+                </div>
+
+                <!-- Dynamic Recipe Component Breakdown Pill List -->
+                <div id="recipe-ratios-summary" class="mt-4 p-3 bg-darkbg/60 rounded-lg border border-borderbg/50 text-xs space-y-1.5">
+                    <!-- Dynamic details -->
+                </div>
+            </div>
+
+            <!-- Calculation Mode Switcher & Inputs -->
+            <div class="bg-cardbg border border-borderbg rounded-xl p-5 shadow-xl space-y-4">
+                <h2 class="font-serif-title text-lg font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-gold-500"></i>
+                    2. Calculation Mode
+                </h2>
+
+                <!-- Target Mode Options -->
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 p-3 bg-darkbg rounded-lg border border-borderbg cursor-pointer hover:border-gold-500/50 transition-all">
+                        <input type="radio" name="calc-mode" value="fine-metal" checked onchange="setCalcMode(this.value)" class="accent-gold-500">
+                        <div class="text-xs">
+                            <span class="font-bold text-white block">Based on Available Fine Metal</span>
+                            <span class="text-gray-400">Calculate total possible batch weight based on fine gold/silver in stock.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-darkbg rounded-lg border border-borderbg cursor-pointer hover:border-gold-500/50 transition-all">
+                        <input type="radio" name="calc-mode" value="target-total" onchange="setCalcMode(this.value)" class="accent-gold-500">
+                        <div class="text-xs">
+                            <span class="font-bold text-white block">Based on Desired Total Alloy Weight</span>
+                            <span class="text-gray-400">Calculate required fine metal & additives needed for a specific piece/tree.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-darkbg rounded-lg border border-borderbg cursor-pointer hover:border-gold-500/50 transition-all">
+                        <input type="radio" name="calc-mode" value="limiting-component" onchange="setCalcMode(this.value)" class="accent-gold-500">
+                        <div class="text-xs">
+                            <span class="font-bold text-white block">Limiting Component Inventory</span>
+                            <span class="text-gray-400">Calculate max batch constrained by limited stock of master alloy/additives.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Dynamic Input Container -->
+                <div id="dynamic-inputs" class="pt-2 border-t border-borderbg space-y-3">
+                    <!-- Populated dynamically based on calc mode -->
+                </div>
+            </div>
+
+            <!-- Spot Price Quick Panel -->
+            <div class="bg-cardbg border border-borderbg rounded-xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Spot Price Overview (Per ozt)</h3>
+                    <button onclick="toggleModal('spot-price-modal')" class="text-xs text-gold-400 hover:underline">Edit Prices</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="bg-darkbg p-2.5 rounded-lg border border-borderbg">
+                        <span class="text-xs text-gray-400 block">Fine Gold (24K)</span>
+                        <span class="font-bold text-amber-400" id="spot-gold-display">$2,650.00</span>
+                    </div>
+                    <div class="bg-darkbg p-2.5 rounded-lg border border-borderbg">
+                        <span class="text-xs text-gray-400 block">Fine Silver (.999)</span>
+                        <span class="font-bold text-silver-200" id="spot-silver-display">$31.50</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT PANEL: Calculation Results & Metallurgical Insights (7 Cols) -->
+        <section class="lg:col-span-7 space-y-6">
+
+            <!-- Primary Result Card (Print Friendly) -->
+            <div id="printable-area" class="bg-cardbg border border-gold-500/30 rounded-xl p-6 shadow-2xl relative overflow-hidden print-card">
+                <!-- Decorative top bar -->
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-500 via-yellow-200 to-amber-600"></div>
+
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="text-xs font-semibold text-gold-400 uppercase tracking-widest block mb-1">Calculated Batch Recipe</span>
+                        <h2 class="font-serif-title text-2xl font-bold text-white" id="res-alloy-name">Sterling Silver (925)</h2>
+                        <p class="text-xs text-gray-400" id="res-mode-desc">Based on available Fine Silver</p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 no-print">
+                        <button onclick="copyRecipeSummary()" title="Copy to clipboard" class="p-2 bg-darkbg border border-borderbg rounded-lg hover:border-gold-500 text-gray-300 hover:text-white transition-all text-xs flex items-center gap-1.5">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                        <button onclick="saveToHistory()" title="Save Batch to History" class="p-2 bg-darkbg border border-borderbg rounded-lg hover:border-gold-500 text-gray-300 hover:text-white transition-all text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-bookmark"></i> Save
+                        </button>
+                        <button onclick="window.print()" title="Print Bench Sheet" class="p-2 bg-darkbg border border-borderbg rounded-lg hover:border-gold-500 text-gray-300 hover:text-white transition-all text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-print"></i> Print Sheet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Total Summary Banner -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-darkbg/80 border border-borderbg p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-gray-400 block">Total Batch Weight</span>
+                            <span class="text-2xl font-extrabold text-gold-400" id="res-total-weight">0.00 g</span>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400">
+                            <i class="fa-solid fa-weight-hanging text-lg"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-darkbg/80 border border-borderbg p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-gray-400 block">Est. Raw Metal Melt Value</span>
+                            <span class="text-2xl font-extrabold text-emerald-400" id="res-total-cost">$0.00</span>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <i class="fa-solid fa-dollar-sign text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Component Breakdown Table & Chart Container -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    
+                    <!-- Component Table (7 cols) -->
+                    <div class="md:col-span-7 space-y-3">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Weigh Out Components:</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-borderbg text-xs text-gray-400">
+                                        <th class="pb-2 font-medium">Metal Element</th>
+                                        <th class="pb-2 font-medium text-right">Ratio</th>
+                                        <th class="pb-2 font-medium text-right">Required Weight</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="res-table-body" class="divide-y divide-borderbg/50">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pie Chart Visual (5 cols) -->
+                    <div class="md:col-span-5 flex flex-col items-center justify-center no-print">
+                        <div class="w-44 h-44 relative">
+                            <canvas id="alloyChart"></canvas>
+                        </div>
+                        <span class="text-[10px] text-gray-400 mt-2 text-center">Composition Ratio Chart</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Technical Metallurgical Bench Guide -->
+            <div class="bg-cardbg border border-borderbg rounded-xl p-5 shadow-xl space-y-4 no-print">
+                <h3 class="font-serif-title text-base font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-temperature-arrow-up text-amber-500"></i>
+                    Metallurgical Bench Reference & Casting Specs
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div class="bg-darkbg p-3 rounded-lg border border-borderbg space-y-1">
+                        <span class="text-gray-400 block font-medium">Melting Range</span>
+                        <span class="text-white font-bold text-sm block" id="guide-melt-temp">893°C - 900°C (1640°F)</span>
+                        <span class="text-[11px] text-amber-400/80 block" id="guide-casting-temp">Flask: 530°C - 620°C</span>
+                    </div>
+                    <div class="bg-darkbg p-3 rounded-lg border border-borderbg space-y-1">
+                        <span class="text-gray-400 block font-medium">Recommended Flux</span>
+                        <span class="text-white font-bold block" id="guide-flux">Boric Acid + Borax (1:1)</span>
+                        <span class="text-[11px] text-gray-400 block" id="guide-atmosphere">Reducing Flame / Charcoal</span>
+                    </div>
+                    <div class="bg-darkbg p-3 rounded-lg border border-borderbg space-y-1">
+                        <span class="text-gray-400 block font-medium">Quench & Heat Treatment</span>
+                        <span class="text-white font-bold block" id="guide-quench">Quench after 3-5 mins glow</span>
+                        <span class="text-[11px] text-gray-400 block" id="guide-anneal">Anneal at 650°C dull red</span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg text-xs text-amber-300 flex items-start gap-2.5">
+                    <i class="fa-solid fa-triangle-exclamation mt-0.5 text-amber-400"></i>
+                    <p id="guide-bench-notes">
+                        Ensure all metals are cleaned and degreased prior to melting. Add fine silver first, then copper, followed by low-melting element additions (such as Zinc/Germanium) right before pour to prevent volatilization loss.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Saved History Panel -->
+            <div class="bg-cardbg border border-borderbg rounded-xl p-5 shadow-xl space-y-3 no-print">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-serif-title text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-gold-500"></i>
+                        Saved Batch Calculations
+                    </h3>
+                    <button onclick="clearHistory()" class="text-xs text-red-400 hover:underline">Clear History</button>
+                </div>
+
+                <div id="history-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <p class="text-xs text-gray-500 italic">No saved batch history yet. Click 'Save' on any calculated result.</p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-borderbg bg-cardbg py-4 text-center text-xs text-gray-400 no-print">
+        <p>Aureus & Argent Jewelry Alloy Bench Tool &bull; Precise Metal Calculations for Goldsmiths, Silversmiths & Artisans</p>
+    </footer>
+
+    <!-- MODAL: Custom Alloy Recipe Builder -->
+    <div id="custom-alloy-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden no-print">
+        <div class="bg-cardbg border border-borderbg rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-borderbg pb-3">
+                <h3 class="font-serif-title text-lg font-bold text-gold-400">Create Custom Alloy Recipe</h3>
+                <button onclick="toggleModal('custom-alloy-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-400 mb-1">Category</label>
+                    <select id="custom-category" class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-white">
+                        <option value="Silver">Silver</option>
+                        <option value="18K Gold">18K Gold</option>
+                        <option value="14K Gold">14K Gold</option>
+                        <option value="10K Gold">10K Gold</option>
+                        <option value="Custom">Custom / Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 mb-1">Alloy Recipe Name</label>
+                    <input type="text" id="custom-name" placeholder="e.g. 18K Royal Green Gold" class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gold-500">
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-400">Metal Elements (% Composition)</label>
+                        <span id="custom-total-pct" class="font-bold text-gold-400">Total: 0%</span>
+                    </div>
+
+                    <!-- Dynamic List of Element Inputs -->
+                    <div id="custom-elements-container" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <button onclick="addCustomElementRow()" class="w-full py-1.5 border border-dashed border-borderbg hover:border-gold-500 rounded-lg text-gray-400 hover:text-gold-400 text-xs transition-all">
+                        + Add Component Element
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 border-t border-borderbg pt-3">
+                <button onclick="toggleModal('custom-alloy-modal')" class="px-4 py-2 rounded-lg bg-darkbg text-gray-400 hover:text-white text-xs">Cancel</button>
+                <button onclick="saveCustomAlloy()" class="px-4 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-darkbg font-bold text-xs">Save Alloy Recipe</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Spot Price Editor -->
+    <div id="spot-price-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden no-print">
+        <div class="bg-cardbg border border-borderbg rounded-xl max-w-xs w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-borderbg pb-3">
+                <h3 class="font-serif-title text-base font-bold text-gold-400">Set Market Spot Prices</h3>
+                <button onclick="toggleModal('spot-price-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-400 mb-1">Fine Gold Spot Price ($ / ozt)</label>
+                    <input type="number" step="0.1" id="input-spot-gold" class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-white font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 mb-1">Fine Silver Spot Price ($ / ozt)</label>
+                    <input type="number" step="0.01" id="input-spot-silver" class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-white font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 mb-1">Copper / Additives Avg ($ / ozt)</label>
+                    <input type="number" step="0.01" id="input-spot-base" value="0.50" class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-white font-mono">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 border-t border-borderbg pt-3">
+                <button onclick="saveSpotPrices()" class="w-full py-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-darkbg font-bold text-xs">Update Spot Prices</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Alert Box (Replaces alert()) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-cardbg border border-gold-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 text-xs">
+        <i class="fa-solid fa-circle-info text-gold-400 text-base" id="toast-icon"></i>
+        <span id="toast-msg">Notification message</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Master Alloy Specifications Data Store
+        const INITIAL_ALLOYS = {
+            "Silver": {
+                "Sterling Silver (925) - Standard": {
+                    ratios: {"Fine Silver": 0.925, "Copper": 0.075},
+                    specs: { melt: "893°C - 900°C (1640°F)", flask: "530°C - 620°C", flux: "Borax / Boric Acid", quench: "Quench after red glow fades (3 min)", notes: "Standard jewelry alloy. Prone to fire-scale; use protective flux cover during melting." }
+                },
+                "Argentium Silver (935)": {
+                    ratios: {"Fine Silver": 0.935, "Copper": 0.055, "Germanium": 0.010},
+                    specs: { melt: "803°C - 903°C (1657°F)", flask: "500°C - 580°C", flux: "Mild Boric Acid paste", quench: "Air cool completely or hot quench with care", notes: "Fire-scale resistant and heat-treatable. Germanium forms a protective oxide layer." }
+                },
+                "Argentium Silver (960)": {
+                    ratios: {"Fine Silver": 0.960, "Copper": 0.030, "Germanium": 0.010},
+                    specs: { melt: "905°C - 940°C (1724°F)", flask: "520°C - 600°C", flux: "Boric Acid", quench: "Cool for 5 min, then warm water quench", notes: "High purity tarnish-resistant silver. Exceptional luster and ductility." }
+                },
+                "Mexican Silver / Plata (950) - Taxco Standard": {
+                    ratios: {"Fine Silver": 0.950, "Copper": 0.050},
+                    specs: { melt: "890°C - 920°C (1688°F)", flask: "540°C - 620°C", flux: "Borax", quench: "Quench while hot", notes: "Classic Taxco artisan purity standard. Slightly softer than 925 sterling, highly workable." }
+                },
+                "Pineda House Standard (970)": {
+                    ratios: {"Fine Silver": 0.970, "Copper": 0.030},
+                    specs: { melt: "920°C - 945°C (1733°F)", flask: "550°C - 630°C", flux: "Borax", quench: "Water quench after 2 mins", notes: "High purity silversmithing formulation used for hand-hammered hollowware." }
+                },
+                "Spratling Classic (980) - High Purity": {
+                    ratios: {"Fine Silver": 0.980, "Copper": 0.020},
+                    specs: { melt: "935°C - 955°C (1751°F)", flask: "580°C - 650°C", flux: "Borax", quench: "Direct water quench", notes: "Ultra-pure traditional Taxco alloy favored by William Spratling for high contrast repoussé." }
+                },
+                "Coin Silver (900)": {
+                    ratios: {"Fine Silver": 0.900, "Copper": 0.100},
+                    specs: { melt: "879°C - 890°C (1634°F)", flask: "500°C - 580°C", flux: "Borax + Charcoal", quench: "Water quench", notes: "Harder, durable silver alloy traditionally made from melted coinage." }
+                }
+            },
+            "18K Gold": {
+                "18K Yellow Gold (Standard 2N)": {
+                    ratios: {"Fine Gold": 0.750, "Fine Silver": 0.125, "Copper": 0.125},
+                    specs: { melt: "885°C - 925°C (1697°F)", flask: "550°C - 600°C", flux: "Boric Acid in alcohol", quench: "Quench in water after 5 mins", notes: "Classic rich yellow color balance. High corrosion resistance and malleable." }
+                },
+                "18K Rose / Red Gold": {
+                    ratios: {"Fine Gold": 0.750, "Copper": 0.225, "Fine Silver": 0.025},
+                    specs: { melt: "890°C - 910°C (1670°F)", flask: "500°C - 560°C", flux: "Borax cover", quench: "Quench immediately to maintain ductility", notes: "Copper dominant. Age-hardens quickly; work carefully to prevent stress cracking." }
+                },
+                "18K White Gold (Nickel Master)": {
+                    ratios: {"Fine Gold": 0.750, "Nickel": 0.100, "Copper": 0.100, "Zinc": 0.050},
+                    specs: { melt: "940°C - 980°C (1796°F)", flask: "600°C - 660°C", flux: "Fluoride-based gold flux", quench: "Air cool or hot quench", notes: "Strong premium white gold. Nickel provides crisp white color; zinc improves fluidity." }
+                },
+                "18K Soft Green Gold": {
+                    ratios: {"Fine Gold": 0.750, "Fine Silver": 0.250},
+                    specs: { melt: "960°C - 980°C (1796°F)", flask: "580°C - 620°C", flux: "Boric Acid", quench: "Water quench", notes: "Distinctive greenish-yellow hue. Soft and extremely pliable." }
+                }
+            },
+            "14K Gold": {
+                "14K Yellow Gold (Standard)": {
+                    ratios: {"Fine Gold": 0.583, "Fine Silver": 0.200, "Copper": 0.217},
+                    specs: { melt: "830°C - 870°C (1598°F)", flask: "520°C - 580°C", flux: "Borax / Boric Acid", quench: "Quench after 3-4 mins", notes: "Most popular US commercial jewelry alloy. Excellent balance of durability & warm color." }
+                },
+                "14K Rose Gold": {
+                    ratios: {"Fine Gold": 0.583, "Copper": 0.417},
+                    specs: { melt: "875°C - 905°C (1652°F)", flask: "500°C - 550°C", flux: "Borax", quench: "Quench immediately while hot", notes: "Rich pinkish-red hue. High copper content makes it stiff and tough." }
+                },
+                "14K White Gold (Nickel Master)": {
+                    ratios: {"Fine Gold": 0.583, "Nickel": 0.170, "Copper": 0.147, "Zinc": 0.100},
+                    specs: { melt: "920°C - 960°C (1760°F)", flask: "580°C - 640°C", flux: "Gold casting flux", quench: "Cool 5 mins then quench", notes: "Bright white alloy, requires good torch heat due to nickel content." }
+                }
+            },
+            "10K Gold": {
+                "10K Yellow Gold": {
+                    ratios: {"Fine Gold": 0.417, "Fine Silver": 0.350, "Copper": 0.233},
+                    specs: { melt: "815°C - 860°C (1580°F)", flask: "500°C - 560°C", flux: "Borax", quench: "Water quench", notes: "High durability, lower price point. Prone to slight oxidation during open melt." }
+                },
+                "10K Rose Gold": {
+                    ratios: {"Fine Gold": 0.417, "Copper": 0.583},
+                    specs: { melt: "880°C - 915°C (1679°F)", flask: "480°C - 540°C", flux: "Borax cover", quench: "Quench immediately", notes: "Very hard copper-rich alloy. Frequent annealing required during fabrication." }
+                },
+                "10K White Gold (Nickel Master)": {
+                    ratios: {"Fine Gold": 0.417, "Nickel": 0.100, "Copper": 0.383, "Zinc": 0.100},
+                    specs: { melt: "900°C - 940°C (1724°F)", flask: "550°C - 600°C", flux: "Standard gold flux", quench: "Quench after red glow fades", notes: "Economical white gold standard for high-wear jewelry items like class rings." }
+                }
+            }
+        };
+
+        // App State
+        let ALLOY_DATABASE = JSON.parse(localStorage.getItem('aureus_alloys')) || INITIAL_ALLOYS;
+        let activeCategory = 'Silver';
+        let activeAlloyName = '';
+        let calcMode = 'fine-metal'; // 'fine-metal', 'target-total', 'limiting-component'
+        let currentUnit = 'g'; // 'g', 'ozt', 'dwt'
+
+        // Spot prices per Troy Ounce (ozt)
+        let spotPrices = JSON.parse(localStorage.getItem('aureus_spots')) || {
+            gold: 2650.00,
+            silver: 31.50,
+            base: 0.50
+        };
+
+        // Chart instance
+        let chartInstance = null;
+
+        // Conversion Factors (Base internal unit is Grams)
+        const UNIT_TO_GRAMS = {
+            'g': 1.0,
+            'ozt': 31.1034768,
+            'dwt': 1.55517384
+        };
+
+        // Initialize App on DOM Load
+        window.onload = function() {
+            updateSpotDisplay();
+            renderCategoryTabs();
+            setCategory('Silver');
+            initChart();
+            renderHistory();
+        };
+
+        // --- Category & Selection Handlers ---
+        function setCategory(cat) {
+            activeCategory = cat;
+            
+            // Update Tab UI
+            document.querySelectorAll('.cat-tab').forEach(tab => {
+                if(tab.id === `cat-${cat}`) {
+                    tab.className = "cat-tab py-2 rounded-md transition-all bg-gold-500 text-darkbg font-bold";
+                } else {
+                    tab.className = "cat-tab py-2 rounded-md transition-all text-gray-400 hover:text-white";
+                }
+            });
+
+            // Populate Alloys Select Dropdown
+            const select = document.getElementById('alloy-select');
+            select.innerHTML = '';
+            
+            const categoryAlloys = ALLOY_DATABASE[cat] || {};
+            const names = Object.keys(categoryAlloys);
+
+            names.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+
+            if(names.length > 0) {
+                activeAlloyName = names[0];
+                select.value = activeAlloyName;
+            }
+
+            onAlloySelectChange();
+        }
+
+        function renderCategoryTabs() {
+            // Ensures category tabs exist even if custom categories added
+        }
+
+        function onAlloySelectChange() {
+            const select = document.getElementById('alloy-select');
+            activeAlloyName = select.value;
+            renderRecipeRatiosSummary();
+            renderDynamicInputs();
+            calculate();
+        }
+
+        function renderRecipeRatiosSummary() {
+            const alloy = ALLOY_DATABASE[activeCategory][activeAlloyName];
+            if(!alloy) return;
+
+            const container = document.getElementById('recipe-ratios-summary');
+            let html = `<div class="font-semibold text-gray-300 mb-1">Recipe Ratios:</div><div class="flex flex-wrap gap-2">`;
+            
+            for(const [metal, ratio] of Object.entries(alloy.ratios)) {
+                html += `<span class="bg-darkbg px-2 py-1 rounded border border-borderbg text-gray-300">
+                    <strong class="text-gold-400">${metal}:</strong> ${(ratio * 100).toFixed(1)}%
+                </span>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- Unit & Calculation Mode Switching ---
+        function setUnit(unit) {
+            currentUnit = unit;
+            ['g', 'ozt', 'dwt'].forEach(u => {
+                const btn = document.getElementById(`unit-btn-${u}`);
+                if(u === unit) {
+                    btn.className = "px-3 py-1.5 rounded-md transition-all text-darkbg bg-gold-500 font-bold";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-md transition-all text-gray-400 hover:text-white";
+                }
+            });
+
+            renderDynamicInputs();
+            calculate();
+        }
+
+        function setCalcMode(mode) {
+            calcMode = mode;
+            renderDynamicInputs();
+            calculate();
+        }
+
+        // --- Dynamic Inputs Rendering ---
+        function renderDynamicInputs() {
+            const container = document.getElementById('dynamic-inputs');
+            const alloy = ALLOY_DATABASE[activeCategory][activeAlloyName];
+            if(!alloy) return;
+
+            const unitLabel = currentUnit;
+            let html = '';
+
+            if (calcMode === 'fine-metal') {
+                const primaryBase = activeCategory.includes('Silver') ? 'Fine Silver' : 'Fine Gold';
+                html = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs text-gray-300 font-medium">Available Weight of ${primaryBase}</label>
+                            <span class="text-xs font-mono text-gold-400" id="input-val-display">50 ${unitLabel}</span>
+                        </div>
+                        <input type="range" id="input-slider" min="1" max="500" value="50" step="0.5" 
+                            oninput="syncInput(this.value, 'input-num')" class="w-full accent-gold-500 mb-2">
+                        <div class="relative">
+                            <input type="number" id="input-num" value="50" step="0.1" min="0.01"
+                                oninput="syncInput(this.value, 'input-slider')" 
+                                class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-gold-500">
+                            <span class="absolute right-3 top-2.5 text-xs text-gray-500">${unitLabel}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (calcMode === 'target-total') {
+                html = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs text-gray-300 font-medium">Desired Total Finished Alloy Weight</label>
+                            <span class="text-xs font-mono text-gold-400" id="input-val-display">100 ${unitLabel}</span>
+                        </div>
+                        <input type="range" id="input-slider" min="1" max="1000" value="100" step="1" 
+                            oninput="syncInput(this.value, 'input-num')" class="w-full accent-gold-500 mb-2">
+                        <div class="relative">
+                            <input type="number" id="input-num" value="100" step="0.1" min="0.01"
+                                oninput="syncInput(this.value, 'input-slider')" 
+                                class="w-full bg-darkbg border border-borderbg rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-gold-500">
+                            <span class="absolute right-3 top-2.5 text-xs text-gray-500">${unitLabel}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (calcMode === 'limiting-component') {
+                html = `<div class="space-y-3"><p class="text-xs text-gray-400">Enter available stock for each element to calculate maximum constraint:</p>`;
+                for(const [metal, ratio] of Object.entries(alloy.ratios)) {
+                    html += `
+                        <div class="bg-darkbg/50 p-2.5 rounded-lg border border-borderbg flex items-center justify-between gap-3">
+                            <span class="text-xs font-medium text-white">${metal} (${(ratio*100).toFixed(1)}%)</span>
+                            <div class="relative w-32">
+                                <input type="number" step="0.1" value="20" data-metal="${metal}" 
+                                    oninput="calculate()"
+                                    class="limiting-input w-full bg-darkbg border border-borderbg rounded px-2 py-1 text-xs text-white text-right font-mono focus:border-gold-500">
+                                <span class="absolute right-2 top-1 text-[10px] text-gray-500">${unitLabel}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function syncInput(val, targetId) {
+            const target = document.getElementById(targetId);
+            if(target) target.value = val;
+            const display = document.getElementById('input-val-display');
+            if(display) display.textContent = `${val} ${currentUnit}`;
+            calculate();
+        }
+
+        // --- Core Calculation Logic ---
+        function calculate() {
+            const alloy = ALLOY_DATABASE[activeCategory]?.[activeAlloyName];
+            if(!alloy) return;
+
+            let totalBatchWeightUser = 0; // In selected display unit
+            const primaryBase = activeCategory.includes('Silver') ? 'Fine Silver' : 'Fine Gold';
+
+            if (calcMode === 'fine-metal') {
+                const fineAvailable = parseFloat(document.getElementById('input-num')?.value) || 0;
+                const baseRatio = alloy.ratios[primaryBase] || Object.values(alloy.ratios)[0];
+                totalBatchWeightUser = fineAvailable / baseRatio;
+            } 
+            else if (calcMode === 'target-total') {
+                totalBatchWeightUser = parseFloat(document.getElementById('input-num')?.value) || 0;
+            } 
+            else if (calcMode === 'limiting-component') {
+                let maxPossibleBatch = Infinity;
+                document.querySelectorAll('.limiting-input').forEach(input => {
+                    const metal = input.dataset.metal;
+                    const avail = parseFloat(input.value) || 0;
+                    const ratio = alloy.ratios[metal];
+                    if(ratio > 0) {
+                        const batchForThisMetal = avail / ratio;
+                        if(batchForThisMetal < maxPossibleBatch) {
+                            maxPossibleBatch = batchForThisMetal;
+                        }
+                    }
+                });
+                totalBatchWeightUser = maxPossibleBatch === Infinity ? 0 : maxPossibleBatch;
+            }
+
+            // Convert total weight to grams for accurate cost estimation
+            const totalWeightGrams = totalBatchWeightUser * UNIT_TO_GRAMS[currentUnit];
+
+            // Render Output Card
+            renderResults(alloy, totalBatchWeightUser, totalWeightGrams);
+        }
+
+        function renderResults(alloy, totalBatchWeightUser, totalWeightGrams) {
+            // Headers
+            document.getElementById('res-alloy-name').textContent = activeAlloyName;
+            
+            const modeDescriptions = {
+                'fine-metal': 'Calculated based on available fine metal inventory',
+                'target-total': 'Calculated to yield precise target finished alloy weight',
+                'limiting-component': 'Calculated based on bottleneck element inventory limit'
+            };
+            document.getElementById('res-mode-desc').textContent = modeDescriptions[calcMode];
+            document.getElementById('res-total-weight').textContent = `${totalBatchWeightUser.toFixed(2)} ${currentUnit}`;
+
+            // Component Table & Cost Calculation
+            const tbody = document.getElementById('res-table-body');
+            tbody.innerHTML = '';
+
+            let totalCostUSD = 0;
+            const labels = [];
+            const chartData = [];
+            const chartColors = [];
+
+            const colorPalette = {
+                'Fine Silver': '#e5e4e2',
+                'Fine Gold': '#d4af37',
+                'Copper': '#cd7f32',
+                'Germanium': '#a0aec0',
+                'Nickel': '#cbd5e0',
+                'Zinc': '#718096'
+            };
+
+            for(const [metal, ratio] of Object.entries(alloy.ratios)) {
+                const componentWeight = totalBatchWeightUser * ratio;
+                const componentGrams = componentWeight * UNIT_TO_GRAMS[currentUnit];
+                const componentOzt = componentGrams / 31.1034768;
+
+                // Value estimation
+                let metalCost = 0;
+                if(metal === 'Fine Gold') {
+                    metalCost = componentOzt * spotPrices.gold;
+                } else if(metal === 'Fine Silver') {
+                    metalCost = componentOzt * spotPrices.silver;
+                } else {
+                    metalCost = componentOzt * spotPrices.base;
+                }
+                totalCostUSD += metalCost;
+
+                // Append Table Row
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-darkbg/40 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-2.5 font-semibold text-white flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${colorPalette[metal] || '#e2e8f0'}"></span>
+                        ${metal}
+                    </td>
+                    <td class="py-2.5 text-right font-mono text-gray-400">${(ratio * 100).toFixed(1)}%</td>
+                    <td class="py-2.5 text-right font-mono font-bold text-gold-400">${componentWeight.toFixed(2)} ${currentUnit}</td>
+                `;
+                tbody.appendChild(tr);
+
+                labels.push(metal);
+                chartData.push((ratio * 100).toFixed(1));
+                chartColors.push(colorPalette[metal] || '#94a3b8');
+            }
+
+            document.getElementById('res-total-cost').textContent = `$${totalCostUSD.toFixed(2)}`;
+
+            // Update Chart
+            updateChart(labels, chartData, chartColors);
+
+            // Update Bench Specs Guide
+            const specs = alloy.specs || {
+                melt: "890°C - 930°C",
+                flask: "520°C - 600°C",
+                flux: "Universal Borax",
+                quench: "Standard water quench",
+                notes: "Standard jewelry alloy casting and fabrication guidelines apply."
+            };
+            document.getElementById('guide-melt-temp').textContent = specs.melt;
+            document.getElementById('guide-casting-temp').textContent = `Recommended Flask: ${specs.flask}`;
+            document.getElementById('guide-flux').textContent = specs.flux;
+            document.getElementById('guide-quench').textContent = specs.quench;
+            document.getElementById('guide-bench-notes').textContent = specs.notes;
+        }
+
+        // --- Chart.js Rendering ---
+        function initChart() {
+            const ctx = document.getElementById('alloyChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [],
+                        borderWidth: 2,
+                        borderColor: '#181b20'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '68%'
+                }
+            });
+        }
+
+        function updateChart(labels, data, colors) {
+            if(!chartInstance) return;
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = data;
+            chartInstance.data.datasets[0].backgroundColor = colors;
+            chartInstance.update();
+        }
+
+        // --- Spot Price Handlers ---
+        function updateSpotDisplay() {
+            document.getElementById('spot-gold-display').textContent = `$${spotPrices.gold.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('spot-silver-display').textContent = `$${spotPrices.silver.toFixed(2)}`;
+            document.getElementById('input-spot-gold').value = spotPrices.gold;
+            document.getElementById('input-spot-silver').value = spotPrices.silver;
+            document.getElementById('input-spot-base').value = spotPrices.base;
+        }
+
+        function saveSpotPrices() {
+            const g = parseFloat(document.getElementById('input-spot-gold').value);
+            const s = parseFloat(document.getElementById('input-spot-silver').value);
+            const b = parseFloat(document.getElementById('input-spot-base').value);
+
+            if(g > 0 && s > 0) {
+                spotPrices = { gold: g, silver: s, base: b || 0.5 };
+                localStorage.setItem('aureus_spots', JSON.stringify(spotPrices));
+                updateSpotDisplay();
+                toggleModal('spot-price-modal');
+                calculate();
+                showToast("Spot prices updated successfully.");
+            } else {
+                showToast("Please enter valid spot prices.");
+            }
+        }
+
+        // --- Custom Alloy Builder Modal Logic ---
+        function addCustomElementRow(name = '', pct = '') {
+            const container = document.getElementById('custom-elements-container');
+            const row = document.createElement('div');
+            row.className = "flex items-center gap-2 custom-elem-row";
+            row.innerHTML = `
+                <input type="text" placeholder="Metal (e.g. Copper)" value="${name}" class="elem-name flex-grow bg-darkbg border border-borderbg rounded px-2.5 py-1 text-xs text-white">
+                <input type="number" step="0.1" placeholder="%" value="${pct}" oninput="updateCustomTotalPct()" class="elem-pct w-20 bg-darkbg border border-borderbg rounded px-2.5 py-1 text-xs text-white font-mono text-right">
+                <button onclick="this.parentElement.remove(); updateCustomTotalPct();" class="text-gray-500 hover:text-red-400 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+            `;
+            container.appendChild(row);
+            updateCustomTotalPct();
+        }
+
+        function updateCustomTotalPct() {
+            let total = 0;
+            document.querySelectorAll('.elem-pct').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            const display = document.getElementById('custom-total-pct');
+            display.textContent = `Total: ${total.toFixed(1)}%`;
+            if(Math.abs(total - 100) < 0.1) {
+                display.className = "font-bold text-emerald-400";
+            } else {
+                display.className = "font-bold text-amber-400";
+            }
+        }
+
+        function saveCustomAlloy() {
+            const cat = document.getElementById('custom-category').value;
+            const name = document.getElementById('custom-name').value.trim();
+
+            if(!name) {
+                showToast("Please enter an alloy recipe name.");
+                return;
+            }
+
+            const ratios = {};
+            let totalPct = 0;
+            document.querySelectorAll('.custom-elem-row').forEach(row => {
+                const elemName = row.querySelector('.elem-name').value.trim();
+                const elemPct = parseFloat(row.querySelector('.elem-pct').value) || 0;
+                if(elemName && elemPct > 0) {
+                    ratios[elemName] = elemPct / 100;
+                    totalPct += elemPct;
+                }
+            });
+
+            if(Math.abs(totalPct - 100) > 0.1) {
+                showToast(`Total composition must equal 100% (currently ${totalPct.toFixed(1)}%).`);
+                return;
+            }
+
+            if(!ALLOY_DATABASE[cat]) {
+                ALLOY_DATABASE[cat] = {};
+            }
+
+            ALLOY_DATABASE[cat][name] = {
+                ratios: ratios,
+                specs: {
+                    melt: "Custom Melt Specs",
+                    flask: "500°C - 600°C",
+                    flux: "Standard Borax",
+                    quench: "Water quench",
+                    notes: "User-defined custom alloy recipe."
+                }
+            };
+
+            localStorage.setItem('aureus_alloys', JSON.stringify(ALLOY_DATABASE));
+            toggleModal('custom-alloy-modal');
+            setCategory(cat);
+            const select = document.getElementById('alloy-select');
+            select.value = name;
+            onAlloySelectChange();
+            showToast(`Custom recipe '${name}' saved!`);
+        }
+
+        // Initialize default inputs in custom modal
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('custom-elements-container');
+            if(container && container.children.length === 0) {
+                addCustomElementRow('Fine Gold', '75');
+                addCustomElementRow('Copper', '25');
+            }
+        });
+
+        // --- History LocalStorage Management ---
+        function saveToHistory() {
+            const history = JSON.parse(localStorage.getItem('aureus_history')) || [];
+            const item = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                alloy: activeAlloyName,
+                total: document.getElementById('res-total-weight').textContent,
+                cost: document.getElementById('res-total-cost').textContent
+            };
+
+            history.unshift(item);
+            if(history.length > 15) history.pop();
+            localStorage.setItem('aureus_history', JSON.stringify(history));
+            renderHistory();
+            showToast("Batch saved to history.");
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('aureus_history')) || [];
+            const container = document.getElementById('history-list');
+
+            if(history.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic">No saved batch history yet. Click 'Save' on any calculated result.</p>`;
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <div class="bg-darkbg p-2.5 rounded-lg border border-borderbg flex items-center justify-between text-xs">
+                    <div>
+                        <span class="font-bold text-white block">${item.alloy}</span>
+                        <span class="text-[10px] text-gray-500">${item.date}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-gold-400 block">${item.total}</span>
+                        <span class="text-[10px] text-emerald-400">${item.cost}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('aureus_history');
+            renderHistory();
+            showToast("History cleared.");
+        }
+
+        // --- Copy & Export Tooling ---
+        function copyRecipeSummary() {
+            const alloy = ALLOY_DATABASE[activeCategory][activeAlloyName];
+            const total = document.getElementById('res-total-weight').textContent;
+            const cost = document.getElementById('res-total-cost').textContent;
+
+            let text = `--- AUREUS & ARGENT ALLOY BATCH SHEET ---\n`;
+            text += `Recipe: ${activeAlloyName}\n`;
+            text += `Total Batch Weight: ${total}\n`;
+            text += `Estimated Metal Melt Value: ${cost}\n\n`;
+            text += `Components Breakdown:\n`;
+
+            const totalUserVal = parseFloat(total);
+            for(const [metal, ratio] of Object.entries(alloy.ratios)) {
+                const comp = (totalUserVal * ratio).toFixed(2);
+                text += ` - ${metal}: ${comp} ${currentUnit} (${(ratio*100).toFixed(1)}%)\n`;
+            }
+
+            text += `\nMelting Range: ${alloy.specs?.melt || 'N/A'}\n`;
+
+            // Clipboard write workaround
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast("Recipe summary copied to clipboard!");
+        }
+
+        // --- UI Utilities ---
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if(modal) {
+                modal.classList.toggle('hidden');
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
